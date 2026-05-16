@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabaseServer'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createServerClient()
@@ -13,7 +13,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Delete the report (RLS should handle ownership, but we'll be explicit)
     const { error } = await supabase

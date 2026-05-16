@@ -187,58 +187,65 @@ export default function DashboardPage() {
           {reports && reports.length > 0 ? (
             <div className="grid gap-4">
               {reports.map((report) => (
-                <Link
+                <div
                   key={report.id}
-                  href={`/report/${report.id}`}
-                  className="group relative block"
+                  className="group relative"
                 >
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600/0 to-indigo-600/0 rounded-3xl opacity-0 group-hover:from-purple-600/20 group-hover:to-indigo-600/20 group-hover:opacity-100 transition duration-500"></div>
-                  <div className="relative glass-card p-8 rounded-3xl flex items-center justify-between border-white/5 transition-all group-hover:bg-zinc-900/80 group-hover:translate-x-1">
-                    <div className="flex items-center gap-6">
-                      <div className="w-14 h-14 bg-zinc-950 rounded-2xl border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:border-purple-500/50 group-hover:text-purple-400 transition-all">
+                  <div className="relative glass-card p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between border-white/5 transition-all group-hover:bg-zinc-900/80 gap-6">
+                    <div 
+                      className="flex-1 flex items-start sm:items-center gap-4 sm:gap-6 cursor-pointer min-w-0"
+                      onClick={() => router.push(`/report/${report.id}`)}
+                    >
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-zinc-950 rounded-2xl border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:border-purple-500/50 group-hover:text-purple-400 transition-all shrink-0">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-black text-white group-hover:text-purple-400 transition-colors truncate max-w-[150px] sm:max-w-xs md:max-w-md">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-black text-white group-hover:text-purple-400 transition-colors truncate">
                           {report.url.replace('https://', '').replace('http://', '')}
                         </h3>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                          <span className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-widest whitespace-nowrap">
                             {new Date(report.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
-                          <span className="w-1 h-1 rounded-full bg-zinc-800"></span>
-                          <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-500/10 rounded">Completed</span>
+                          <span className="hidden sm:block w-1 h-1 rounded-full bg-zinc-800 shrink-0"></span>
+                          <span className="text-[9px] sm:text-[10px] font-black text-emerald-500 uppercase tracking-widest px-1.5 py-0.5 bg-emerald-500/10 rounded whitespace-nowrap">Completed</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 sm:gap-10">
-                      <div className="text-right hidden xs:block">
-                        <div className="text-2xl font-black text-white group-hover:text-glow-purple transition-all">
+                    <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-10 border-t border-white/5 sm:border-0 pt-4 sm:pt-0">
+                      <div 
+                        className="flex items-center gap-3 sm:block text-left sm:text-right cursor-pointer"
+                        onClick={() => router.push(`/report/${report.id}`)}
+                      >
+                        <div className="text-xl sm:text-2xl font-black text-white group-hover:text-glow-purple transition-all">
                           {report.overall_score}
                         </div>
-                        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Score</div>
+                        <div className="text-[9px] sm:text-[10px] font-black text-zinc-500 uppercase tracking-widest">Score</div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={(e) => {
-                            e.preventDefault()
                             e.stopPropagation()
                             setDeleteId(report.id)
                           }}
-                          className="p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                          className="p-2.5 sm:p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all relative z-10"
                           title="Delete Report"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
-                        <div className="p-2 text-zinc-700 group-hover:text-white transition-colors hidden sm:block">
+                        <div 
+                          className="p-2 text-zinc-700 group-hover:text-white transition-colors hidden sm:block cursor-pointer"
+                          onClick={() => router.push(`/report/${report.id}`)}
+                        >
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                         </div>
                       </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           ) : (
