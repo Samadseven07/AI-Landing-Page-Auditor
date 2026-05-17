@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { analyzeLandingPage } from '@/lib/aiAnalyzer'
 import { createServerClient } from '@/lib/supabaseServer'
+import { checkRateLimit } from '@/lib/rateLimitDB'
+import { checkSEO } from '@/lib/seoChecker'
+import { calculateFinalScores } from '@/lib/scorer'
 
 export async function POST(request: Request) {
   try {
@@ -15,27 +18,12 @@ export async function POST(request: Request) {
     }
 
     // Rate limit check
-    const SUPER_USER = 'abdulsamadchishti07@gmail.com'
-    const LIMIT = 3
-    const WINDOW_HOURS = 24
-
-    if (user.email !== SUPER_USER) {
-      const twentyFourHoursAgo = new Date(Date.now() - WINDOW_HOURS * 60 * 60 * 1000).toISOString()
-      
-      const { count, error: countError } = await supabase
-        .from('reports')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('created_at', twentyFourHoursAgo)
-
-      if (countError) {
-        console.error('Rate limit check failed:', countError)
-      } else if (count !== null && count >= LIMIT) {
-        return NextResponse.json({ 
-          error: `Audit limit reached. You can perform ${LIMIT} audits every ${WINDOW_HOURS} hours. Your limit will reset soon.`,
-          isLimitReached: true 
-        }, { status: 429 })
-      }
+    const rateLimit = await checkRateLimit(user)
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ 
+        error: rateLimit.error,
+        isLimitReached: true 
+      }, { status: 429 })
     }
 
     const { scrapedData } = await request.json()
@@ -44,8 +32,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No data to analyze' }, { status: 400 })
     }
 
+    // Run deterministic SEO check
+    const seoResult = checkSEO(scrapedData.html || '')
+
     // Run AI analysis
-    const analysis = await analyzeLandingPage(scrapedData)
+    const aiAnalysis = await analyzeLandingPage(scrapedData)
+
+    // Combine and apply fixed weights
+    const analysis = calculateFinalScores(aiAnalysis, seoResult)
 
     // Save report to database
     const { data: report, error: saveError } = await supabase

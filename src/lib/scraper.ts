@@ -9,6 +9,7 @@ export interface ScrapedData {
   h2: string[]
   buttons: Array<{ text: string; href?: string }>
   visibleText: string
+  html: string
   screenshot: Buffer | null
   loadTime: number
 }
@@ -82,6 +83,7 @@ export async function scrapePage(url: string): Promise<ScrapedData> {
       h2,
       buttons,
       visibleText,
+      html,
       screenshot,
       loadTime,
     }
