@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
           <p className="text-zinc-500 font-medium text-sm">Create a secure password for your account.</p>
         </div>
 
-        <div className="glass-card p-10 rounded-[2.5rem] border-white/5 space-y-8 shadow-2xl shadow-black/50 relative overflow-hidden">
+        <div className="glass-card p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] border-white/5 space-y-8 shadow-2xl shadow-black/50 relative overflow-hidden">
           {success ? (
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-500">

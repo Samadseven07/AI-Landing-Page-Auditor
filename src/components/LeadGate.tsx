@@ -58,7 +58,7 @@ export default function LeadGate({ reportId, url, onEmailSubmit }: LeadGateProps
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 backdrop-blur-2xl bg-zinc-950/70 animate-in fade-in duration-700">
       <div className="max-w-md w-full relative">
-        <div className="relative glass-card p-10 rounded-[2.5rem] border-white/10 shadow-2xl space-y-8 bg-zinc-900/90">
+        <div className="relative glass-card p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] border-white/10 shadow-2xl space-y-8 bg-zinc-900/90">
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-xl ring-1 ring-white/20">
               <svg className="w-8 h-8 text-zinc-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">

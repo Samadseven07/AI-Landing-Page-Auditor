@@ -177,7 +177,7 @@ function FeatureCard({ title, desc, icon, color }: { title: string; desc: string
   }
   
   return (
-    <div className="glass-card p-8 rounded-[2rem] border-white/5 space-y-4 hover:bg-zinc-900/50 transition-colors">
+    <div className="glass-card p-6 sm:p-8 rounded-[2rem] border-white/5 space-y-4 hover:bg-zinc-900/50 transition-colors">
       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colors[color]}`}>
         {icon}
       </div>

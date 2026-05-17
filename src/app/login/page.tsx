@@ -117,7 +117,7 @@ export default function LoginPage() {
         </div>
 
         {/* Auth Card */}
-        <div className="glass-card p-10 rounded-[2.5rem] border-white/5 space-y-8 shadow-2xl shadow-black/50 relative overflow-hidden">
+        <div className="glass-card p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] border-white/5 space-y-8 shadow-2xl shadow-black/50 relative overflow-hidden">
           <form className="space-y-4" onSubmit={handleAuth}>
             <div className="space-y-4">
               <div className="relative group">

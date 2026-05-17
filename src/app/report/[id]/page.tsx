@@ -99,23 +99,24 @@ export default function ReportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <Link href="/dashboard" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 transition-transform group-hover:scale-110">
+              <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 transition-transform group-hover:scale-110 shrink-0">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">Auditor AI</h1>
+              <h1 className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400 hidden min-[360px]:block">Auditor AI</h1>
             </Link>
             
-            <div className="flex items-center gap-6">
-              <Link href="/dashboard" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-2">
+            <div className="flex items-center gap-3 sm:gap-6">
+              <Link href="/dashboard" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5 py-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                Dashboard
+                <span className="hidden sm:inline">Dashboard</span>
               </Link>
               <button
                 onClick={handleDownloadPDF}
-                className="group relative flex items-center gap-2 px-6 py-3 bg-white text-zinc-950 rounded-full text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10"
+                className="group relative flex items-center gap-1.5 px-4 py-2.5 sm:px-6 sm:py-3 bg-white text-zinc-950 rounded-full text-xs sm:text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10 shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Download PDF
+                <span className="hidden sm:inline">Download PDF</span>
+                <span className="sm:hidden">PDF</span>
               </button>
             </div>
           </div>
@@ -149,17 +150,17 @@ export default function ReportPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-1 bg-zinc-900/50 p-1.5 rounded-3xl border border-zinc-800/50 backdrop-blur-sm">
-            <div className="px-8 py-5 text-center bg-zinc-900 rounded-2xl border border-zinc-800 shadow-inner">
-              <div className="text-4xl font-black text-white leading-none mb-1 text-glow-purple">{report?.overall_score}</div>
-              <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Score</div>
+          <div className="flex items-center gap-1 bg-zinc-900/50 p-1.5 rounded-3xl border border-zinc-800/50 backdrop-blur-sm shrink-0">
+            <div className="px-4 py-3 sm:px-8 sm:py-5 text-center bg-zinc-900 rounded-2xl border border-zinc-800 shadow-inner">
+              <div className="text-3xl sm:text-4xl font-black text-white leading-none mb-1 text-glow-purple">{report?.overall_score}</div>
+              <div className="text-[8px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Score</div>
             </div>
-            <div className="px-8 py-5">
-              <div className="text-sm font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <div className="px-4 py-3 sm:px-8 sm:py-5 shrink-0">
+              <div className="text-xs sm:text-sm font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400"></span>
                 Passed
               </div>
-              <div className="text-xs font-medium text-zinc-500">Industry Standard</div>
+              <div className="text-[10px] sm:text-xs font-medium text-zinc-500">Industry Standard</div>
             </div>
           </div>
         </div>

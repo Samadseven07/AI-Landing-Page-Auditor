@@ -104,7 +104,7 @@ export default function SettingsPage() {
           <p className="text-zinc-500 font-medium text-lg">Manage your profile and security preferences.</p>
         </div>
 
-        <div className="glass-card p-10 rounded-[2.5rem] border-white/5 space-y-10 shadow-2xl relative overflow-hidden">
+        <div className="glass-card p-6 sm:p-10 rounded-3xl sm:rounded-[2.5rem] border-white/5 space-y-10 shadow-2xl relative overflow-hidden">
           <div className="space-y-6">
             <h3 className="text-xl font-black text-white uppercase tracking-widest text-zinc-400 border-b border-zinc-800 pb-4">Profile Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -132,24 +132,24 @@ export default function SettingsPage() {
               {!showConfirm ? (
                 <button
                   onClick={() => setShowConfirm(true)}
-                  className="px-8 py-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                  className="w-full sm:w-auto px-8 py-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all text-center flex items-center justify-center"
                 >
                   Delete Account
                 </button>
               ) : (
                 <div className="space-y-6 p-6 bg-red-500/5 rounded-3xl border border-red-500/20 animate-in fade-in slide-in-from-top-4">
-                  <p className="text-white font-bold">Are you absolutely sure?</p>
-                  <div className="flex flex-wrap gap-4">
+                  <p className="text-white font-bold text-center sm:text-left">Are you absolutely sure?</p>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <button
                       onClick={handleDeleteAccount}
                       disabled={deleting}
-                      className="px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50"
+                      className="w-full sm:w-auto px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-50 text-center flex items-center justify-center"
                     >
                       {deleting ? 'Processing...' : 'Yes, Delete Permanently'}
                     </button>
                     <button
                       onClick={() => setShowConfirm(false)}
-                      className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+                      className="w-full sm:w-auto px-8 py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all text-center flex items-center justify-center"
                     >
                       Cancel
                     </button>
