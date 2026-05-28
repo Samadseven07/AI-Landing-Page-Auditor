@@ -69,7 +69,7 @@ export async function scrapePage(url: string): Promise<ScrapedData> {
       screenshot = await page.screenshot({ 
         type: 'jpeg', 
         quality: 80, 
-        fullPage: false 
+        fullPage: true 
       })
     } catch (err) {
       console.warn('Screenshot failed:', err)
@@ -87,7 +87,7 @@ export async function scrapePage(url: string): Promise<ScrapedData> {
       mobileScreenshot = await page.screenshot({
         type: 'jpeg',
         quality: 75,
-        fullPage: false,
+        fullPage: true,
       })
 
       // Check for mobile-specific issues
