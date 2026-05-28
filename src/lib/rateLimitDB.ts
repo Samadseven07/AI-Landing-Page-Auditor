@@ -67,3 +67,47 @@ export async function checkDBAuditLimit(
 
   return { allowed: true }
 }
+
+export async function checkComparisonRateLimit(
+  supabase: SupabaseClient,
+  userId: string,
+  userEmail: string | undefined
+): Promise<{ allowed: boolean; error?: string; hoursLeft?: number }> {
+  const SUPER_USER = process.env.SUPER_USER_EMAIL
+  const LIMIT = 1
+  const WINDOW_HOURS = 24
+
+  // Superuser has unlimited comparisons
+  if (userEmail === SUPER_USER) return { allowed: true }
+
+  const windowStart = new Date(
+    Date.now() - WINDOW_HOURS * 60 * 60 * 1000
+  ).toISOString()
+
+  const { data, count, error } = await supabase
+    .from('comparisons')
+    .select('created_at', { count: 'exact' })
+    .eq('user_id', userId)
+    .gte('created_at', windowStart)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error) return { allowed: true } // fail open
+
+  if (count !== null && count >= LIMIT) {
+    // Calculate how many hours until the oldest comparison in the window expires
+    const oldestInWindow = data?.[0]?.created_at
+    let hoursLeft = WINDOW_HOURS
+    if (oldestInWindow) {
+      const expiresAt = new Date(oldestInWindow).getTime() + WINDOW_HOURS * 60 * 60 * 1000
+      hoursLeft = Math.ceil((expiresAt - Date.now()) / (60 * 60 * 1000))
+    }
+    return {
+      allowed: false,
+      hoursLeft,
+      error: `Comparison limit reached. You can run 1 comparison every 24 hours. Try again in ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}.`,
+    }
+  }
+
+  return { allowed: true }
+}

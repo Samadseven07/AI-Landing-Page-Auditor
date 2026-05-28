@@ -4,6 +4,7 @@ import { scrapePage } from '@/lib/scraper'
 import { analyzeLandingPage } from '@/lib/aiAnalyzer'
 import { checkSEO } from '@/lib/seoChecker'
 import { calculateFinalScores } from '@/lib/scorer'
+import { checkComparisonRateLimit } from '@/lib/rateLimitDB'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim() || '')
@@ -12,6 +13,12 @@ export async function POST(request: Request) {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Rate limit: 1 comparison per 24 hours (superuser is exempt)
+  const rateLimit = await checkComparisonRateLimit(supabase, user.id, user.email)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: rateLimit.error }, { status: 429 })
+  }
 
   const { urlA, urlB } = await request.json()
   if (!urlA || !urlB) return NextResponse.json({ error: 'Two URLs required' }, { status: 400 })
