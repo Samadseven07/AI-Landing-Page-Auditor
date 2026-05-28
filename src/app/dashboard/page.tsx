@@ -12,6 +12,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [deleteComparisonId, setDeleteComparisonId] = useState<string | null>(null)
+  const [deletingComparison, setDeletingComparison] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -70,6 +72,28 @@ export default function DashboardPage() {
     }
   }
 
+  const handleDeleteComparison = async () => {
+    if (!deleteComparisonId) return
+    setDeletingComparison(true)
+
+    try {
+      const res = await fetch(`/api/compare/${deleteComparisonId}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        setComparisons(comparisons.filter(c => c.id !== deleteComparisonId))
+        setDeleteComparisonId(null)
+      } else {
+        alert('Failed to delete comparison')
+      }
+    } catch (err) {
+      console.error('Delete comparison error:', err)
+    } finally {
+      setDeletingComparison(false)
+    }
+  }
+
   const avgScore = reports && reports.length > 0 
     ? Math.round(reports.reduce((acc, r) => acc + (r.overall_score || 0), 0) / reports.length)
     : 0
@@ -87,7 +111,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-zinc-950 selection:bg-purple-500/30">
       <div className="fixed inset-0 bg-grid-white -z-10"></div>
       
-      {/* Custom Delete Confirmation Modal */}
+      {/* Delete Report Confirmation Modal */}
       {deleteId && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm" onClick={() => setDeleteId(null)}></div>
@@ -112,6 +136,40 @@ export default function DashboardPage() {
               <button
                 disabled={deleting}
                 onClick={() => setDeleteId(null)}
+                className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Comparison Confirmation Modal */}
+      {deleteComparisonId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm" onClick={() => setDeleteComparisonId(null)}></div>
+          <div className="relative glass-card max-w-sm w-full p-8 rounded-[2.5rem] border-white/5 space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto text-red-500">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-black text-white">Delete Comparison?</h3>
+              <p className="text-zinc-500 text-sm font-medium leading-relaxed">
+                This action is permanent and cannot be undone. The comparison data will be lost.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                disabled={deletingComparison}
+                onClick={handleDeleteComparison}
+                className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-red-900/20 active:scale-95 disabled:opacity-50"
+              >
+                {deletingComparison ? 'Deleting...' : 'Yes, Delete Permanently'}
+              </button>
+              <button
+                disabled={deletingComparison}
+                onClick={() => setDeleteComparisonId(null)}
                 className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
               >
                 Cancel
@@ -294,22 +352,24 @@ export default function DashboardPage() {
 
             <div className="grid gap-4">
               {comparisons.map((comp) => (
-                <div 
-                  key={comp.id} 
-                  className="group relative cursor-pointer"
-                  onClick={() => router.push(`/compare/${comp.id}`)}
+                <div
+                  key={comp.id}
+                  className="group relative"
                 >
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600/0 to-cyan-600/0 rounded-3xl opacity-0 group-hover:from-blue-600/20 group-hover:to-cyan-600/20 group-hover:opacity-100 transition duration-500"></div>
                   <div className="relative glass-card p-6 rounded-3xl border-white/5 transition-all group-hover:bg-zinc-900/80">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="space-y-1">
+                      <div
+                        className="space-y-1 flex-1 cursor-pointer min-w-0"
+                        onClick={() => router.push(`/compare/${comp.id}`)}
+                      >
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-zinc-400">Site A:</span>
-                          <a href={comp.url_a} target="_blank" rel="noreferrer" className="text-sm font-medium text-white hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-xs">{comp.url_a.replace('https://', '').replace('http://', '')}</a>
+                          <span className="text-sm font-medium text-white truncate max-w-[200px] sm:max-w-xs">{comp.url_a.replace('https://', '').replace('http://', '')}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-zinc-400">Site B:</span>
-                          <a href={comp.url_b} target="_blank" rel="noreferrer" className="text-sm font-medium text-white hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-xs">{comp.url_b.replace('https://', '').replace('http://', '')}</a>
+                          <span className="text-sm font-medium text-white truncate max-w-[200px] sm:max-w-xs">{comp.url_b.replace('https://', '').replace('http://', '')}</span>
                         </div>
                         <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-2">
                           {new Date(comp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -317,12 +377,25 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex items-center gap-4 border-t border-zinc-800 sm:border-0 pt-4 sm:pt-0 w-full sm:w-auto">
-                        <div className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-center">
+                        <div
+                          className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-center cursor-pointer"
+                          onClick={() => router.push(`/compare/${comp.id}`)}
+                        >
                           <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Winner</div>
                           <div className="text-sm font-black text-emerald-400">
                             {comp.winner === 'A' ? 'Site A' : comp.winner === 'B' ? 'Site B' : 'Tie'}
                           </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteComparisonId(comp.id)
+                          }}
+                          className="p-2.5 sm:p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all relative z-10"
+                          title="Delete Comparison"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       </div>
                     </div>
                   </div>

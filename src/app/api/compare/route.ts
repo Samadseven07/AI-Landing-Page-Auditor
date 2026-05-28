@@ -62,7 +62,7 @@ Return JSON only: { "winner": "A" or "B" or "tie", "summary": "2-3 sentences exp
     ]
 
     // Save to database
-    const { data: dbResult } = await supabase
+    const { data: dbResult, error: dbError } = await supabase
       .from('comparisons')
       .insert({
         user_id: user.id,
@@ -75,6 +75,11 @@ Return JSON only: { "winner": "A" or "B" or "tie", "summary": "2-3 sentences exp
       })
       .select('id')
       .single()
+
+    if (dbError) {
+      console.error("Database insert error:", dbError)
+      throw new Error(dbError.message || 'Database insert failed')
+    }
 
     return NextResponse.json({
       id: dbResult?.id,
