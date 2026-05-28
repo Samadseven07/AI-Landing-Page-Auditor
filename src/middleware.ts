@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options)   
           )
         },
       },
@@ -34,7 +34,8 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = 
     request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/audit') ||
-    request.nextUrl.pathname.startsWith('/report')
+    request.nextUrl.pathname.startsWith('/report') ||
+    request.nextUrl.pathname.startsWith('/compare')
 
   const isAuthRoute = 
     request.nextUrl.pathname.startsWith('/login') || 

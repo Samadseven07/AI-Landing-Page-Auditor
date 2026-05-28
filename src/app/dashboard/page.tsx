@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient'
 
 export default function DashboardPage() {
   const [reports, setReports] = useState<any[]>([])
+  const [comparisons, setComparisons] = useState<any[]>([])
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -21,20 +22,29 @@ export default function DashboardPage() {
         return
       }
       setSession(session)
-      fetchReports(session.user.id)
+      fetchData(session.user.id)
     }
     checkUser()
   }, [router])
 
-  const fetchReports = async (userId: string) => {
-    const { data } = await supabase
-      .from('reports')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(20)
+  const fetchData = async (userId: string) => {
+    const [reportsRes, compRes] = await Promise.all([
+      supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20),
+      supabase
+        .from('comparisons')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5)
+    ])
     
-    setReports(data || [])
+    setReports(reportsRes.data || [])
+    setComparisons(compRes.data || [])
     setLoading(false)
   }
 
@@ -123,6 +133,14 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center gap-6">
+              <div className="hidden md:flex items-center gap-4">
+                <Link href="/compare" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                  Compare
+                </Link>
+                <Link href="/dashboard/leads" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                  Leads
+                </Link>
+              </div>
               <div className="hidden sm:flex flex-col items-end">
                 <span className="text-xs font-bold text-white">{session?.user?.email?.split('@')[0]}</span>
                 <span className="text-[10px] font-medium text-zinc-500">{session?.user?.email}</span>
@@ -266,6 +284,53 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+        {/* Comparisons List */}
+        {comparisons && comparisons.length > 0 && (
+          <div className="space-y-6 pt-12 border-t border-white/5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-black text-white">Recent Comparisons</h2>
+              <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Showing {comparisons.length} results</div>
+            </div>
+
+            <div className="grid gap-4">
+              {comparisons.map((comp) => (
+                <div 
+                  key={comp.id} 
+                  className="group relative cursor-pointer"
+                  onClick={() => router.push(`/compare/${comp.id}`)}
+                >
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600/0 to-cyan-600/0 rounded-3xl opacity-0 group-hover:from-blue-600/20 group-hover:to-cyan-600/20 group-hover:opacity-100 transition duration-500"></div>
+                  <div className="relative glass-card p-6 rounded-3xl border-white/5 transition-all group-hover:bg-zinc-900/80">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-black text-zinc-400">Site A:</span>
+                          <a href={comp.url_a} target="_blank" rel="noreferrer" className="text-sm font-medium text-white hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-xs">{comp.url_a.replace('https://', '').replace('http://', '')}</a>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-black text-zinc-400">Site B:</span>
+                          <a href={comp.url_b} target="_blank" rel="noreferrer" className="text-sm font-medium text-white hover:text-blue-400 transition-colors truncate max-w-[200px] sm:max-w-xs">{comp.url_b.replace('https://', '').replace('http://', '')}</a>
+                        </div>
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-2">
+                          {new Date(comp.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 border-t border-zinc-800 sm:border-0 pt-4 sm:pt-0 w-full sm:w-auto">
+                        <div className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-center">
+                          <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Winner</div>
+                          <div className="text-sm font-black text-emerald-400">
+                            {comp.winner === 'A' ? 'Site A' : comp.winner === 'B' ? 'Site B' : 'Tie'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="mt-20 py-12 border-t border-zinc-900">

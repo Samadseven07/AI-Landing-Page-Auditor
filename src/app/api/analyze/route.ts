@@ -59,6 +59,7 @@ export async function POST(request: Request) {
 
     if (saveError) {
       console.error('Failed to save report:', saveError)
+      throw new Error(`Database Error: ${saveError.message}`)
     }
 
     // Save findings

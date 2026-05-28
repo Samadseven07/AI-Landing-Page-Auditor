@@ -1,15 +1,32 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 
-export default function AuditPage() {
-  const [url, setUrl] = useState('')
+function AuditPageContent() {
+  const searchParams = useSearchParams()
+  const [url, setUrl] = useState(searchParams.get('url') || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+
+  const [steps, setSteps] = useState([
+    { label: 'Visiting page...', done: false, active: false },
+    { label: 'Taking screenshot...', done: false, active: false },
+    { label: 'Running SEO checks...', done: false, active: false },
+    { label: 'AI analyzing copy & CTA...', done: false, active: false },
+    { label: 'Building your report...', done: false, active: false },
+  ])
+
+  const setStep = (index: number, status: 'active' | 'done') => {
+    setSteps(prev => prev.map((s, i) => ({
+      ...s,
+      active: status === 'active' ? i === index : (i === index ? false : s.active),
+      done: status === 'done' ? i <= index : s.done,
+    })))
+  }
 
   const handleAudit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,6 +38,8 @@ export default function AuditPage() {
 
     setLoading(true)
     setError('')
+    // Reset steps
+    setSteps(prev => prev.map(s => ({ ...s, done: false, active: false })))
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -30,7 +49,8 @@ export default function AuditPage() {
         return
       }
 
-      // Step 1: Scrape the page
+      // Step 1: Scrape
+      setStep(0, 'active')
       const scrapeRes = await fetch('/api/scrape', {
         method: 'POST',
         headers: {
@@ -45,9 +65,20 @@ export default function AuditPage() {
         throw new Error(errData?.error || 'Failed to scrape page')
       }
 
-      const scrapedData = await scrapeRes.json()
+      setStep(0, 'done')
 
-      // Step 2: Analyze with AI
+      // Step 2: Screenshot captured
+      setStep(1, 'active')
+      const scrapedData = await scrapeRes.json()
+      setStep(1, 'done')
+
+      // Step 3: SEO checks
+      setStep(2, 'active')
+      await new Promise(r => setTimeout(r, 400))
+      setStep(2, 'done')
+
+      // Step 4: AI analyze
+      setStep(3, 'active')
       const analyzeRes = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
@@ -62,9 +93,13 @@ export default function AuditPage() {
         throw new Error(errData?.error || 'Failed to analyze page')
       }
 
-      const analysis = await analyzeRes.json()
+      setStep(3, 'done')
 
-      // Step 3: Redirect to report
+      // Step 5: Save & redirect
+      setStep(4, 'active')
+      const analysis = await analyzeRes.json()
+      setStep(4, 'done')
+
       router.push(`/report/${analysis.reportId}`)
       
     } catch (err) {
@@ -85,7 +120,7 @@ export default function AuditPage() {
         <div className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-widest shadow-xl">
             <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
-            Powered by Gemini 2.5 Flash
+            Powered by Gemini Flash Latest
           </div>
           <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none">
             Audit Your <br />
@@ -131,32 +166,63 @@ export default function AuditPage() {
           </div>
 
           {error && (
-            <div className="absolute -bottom-16 left-0 right-0 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold text-center animate-in fade-in slide-in-from-top-2">
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold text-center animate-in fade-in break-words">
               {error}
             </div>
           )}
         </form>
 
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FeatureCard 
-            title="Conversion Focus" 
-            desc="AI analyzes headlines, CTAs, and layout for high impact." 
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
-            color="purple"
-          />
-          <FeatureCard 
-            title="Vision Analysis" 
-            desc="Using Gemini Vision to audit your design's hierarchy." 
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
-            color="blue"
-          />
-          <FeatureCard 
-            title="Exportable PDF" 
-            desc="Professional reports ready for your team or clients." 
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-            color="emerald"
-          />
-        </div>
+        {/* Streaming Progress Steps */}
+        {loading && (
+          <div className="mt-8 space-y-3 max-w-sm mx-auto">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                  step.done
+                    ? 'bg-emerald-500'
+                    : step.active
+                    ? 'bg-purple-500 animate-pulse'
+                    : 'bg-zinc-800'
+                }`}>
+                  {step.done && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <span className={`text-sm font-medium transition-colors ${
+                  step.done ? 'text-zinc-500 line-through' :
+                  step.active ? 'text-white' : 'text-zinc-600'
+                }`}>
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && (
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <FeatureCard 
+              title="Conversion Focus" 
+              desc="AI analyzes headlines, CTAs, and layout for high impact." 
+              icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+              color="purple"
+            />
+            <FeatureCard 
+              title="Vision Analysis" 
+              desc="Using Gemini Vision to audit your design's hierarchy." 
+              icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
+              color="blue"
+            />
+            <FeatureCard 
+              title="Exportable PDF" 
+              desc="Professional reports ready for your team or clients." 
+              icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+              color="emerald"
+            />
+          </div>
+        )}
 
         <div className="flex justify-center pt-8">
           <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-400 font-bold text-sm uppercase tracking-[0.2em] transition-colors flex items-center gap-3">
@@ -186,5 +252,17 @@ function FeatureCard({ title, desc, icon, color }: { title: string; desc: string
         {desc}
       </p>
     </div>
+  )
+}
+
+export default function AuditPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <AuditPageContent />
+    </Suspense>
   )
 }

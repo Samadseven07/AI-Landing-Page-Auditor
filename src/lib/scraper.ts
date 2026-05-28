@@ -11,6 +11,8 @@ export interface ScrapedData {
   visibleText: string
   html: string
   screenshot: Buffer | null
+  mobileScreenshot: Buffer | null
+  mobileIssues: string[]
   loadTime: number
 }
 
@@ -32,7 +34,7 @@ export async function scrapePage(url: string): Promise<ScrapedData> {
 
     // Set timeout and navigate
     await page.goto(url, { 
-      waitUntil: 'networkidle', 
+      waitUntil: 'domcontentloaded', 
       timeout: 30000 
     })
 
@@ -73,6 +75,53 @@ export async function scrapePage(url: string): Promise<ScrapedData> {
       console.warn('Screenshot failed:', err)
     }
 
+    // ── Mobile Screenshot ─────────────────────────────────────
+    let mobileScreenshot: Buffer | null = null
+    const mobileIssues: string[] = []
+
+    try {
+      // Switch to mobile viewport
+      await page.setViewportSize({ width: 375, height: 812 })
+      await page.waitForTimeout(800)
+
+      mobileScreenshot = await page.screenshot({
+        type: 'jpeg',
+        quality: 75,
+        fullPage: false,
+      })
+
+      // Check for mobile-specific issues
+      const overflowElements = await page.evaluate(() => {
+        const bodyWidth = document.body.scrollWidth
+        const windowWidth = window.innerWidth
+        return bodyWidth > windowWidth
+      })
+
+      if (overflowElements) {
+        mobileIssues.push('Page content overflows on mobile — horizontal scrolling detected')
+      }
+
+      // Check font sizes
+      const smallFonts = await page.evaluate(() => {
+        const elements = document.querySelectorAll('p, span, li, a')
+        let count = 0
+        elements.forEach(el => {
+          const size = parseFloat(window.getComputedStyle(el).fontSize)
+          if (size < 12) count++
+        })
+        return count
+      })
+
+      if (smallFonts > 0) {
+        mobileIssues.push(`${smallFonts} elements have font sizes below 12px — too small for mobile`)
+      }
+
+      // Reset to desktop
+      await page.setViewportSize({ width: 1280, height: 800 })
+    } catch (err) {
+      console.warn('Mobile screenshot failed:', err)
+    }
+
     const loadTime = Date.now() - startTime
 
     return {
@@ -85,6 +134,8 @@ export async function scrapePage(url: string): Promise<ScrapedData> {
       visibleText,
       html,
       screenshot,
+      mobileScreenshot,
+      mobileIssues,
       loadTime,
     }
 

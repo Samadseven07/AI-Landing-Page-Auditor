@@ -2,6 +2,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim() || '')
 
+export interface CopyRewrite {
+  section: string
+  original: string
+  improved: string
+  reason: string
+}
+
 export interface AnalysisResult {
   overallScore: number
   seoScore: number
@@ -11,6 +18,7 @@ export interface AnalysisResult {
   findings: Finding[]
   improvedHeadline?: string
   improvedCTA?: string
+  copyRewrites?: CopyRewrite[]
 }
 
 export interface Finding {
@@ -29,9 +37,9 @@ export async function analyzeLandingPage(data: {
   h2: string[]
   buttons: Array<{ text: string; href?: string }>
   visibleText: string
-  screenshot?: Buffer
+  screenshot?: Buffer | null
 }): Promise<AnalysisResult> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
 
   // Build the analysis prompt
   const prompt = buildAnalysisPrompt(data)
@@ -102,10 +110,30 @@ Return your analysis in this EXACT JSON format:
     }
   ],
   "improvedHeadline": "Better headline suggestion",
-  "improvedCTA": "Better CTA button text"
+  "improvedCTA": "Better CTA button text",
+  "copyRewrites": [
+    {
+      "section": "Hero Headline",
+      "original": "exact text from the page",
+      "improved": "your rewritten version",
+      "reason": "why this is better"
+    },
+    {
+      "section": "Subheadline / Hero Body",
+      "original": "exact text",
+      "improved": "rewritten version",
+      "reason": "explanation"
+    },
+    {
+      "section": "Primary CTA Button",
+      "original": "Submit",
+      "improved": "Get My Free Audit",
+      "reason": "Action verb + value prop + urgency"
+    }
+  ]
 }
 
-Be specific and actionable. Don't give generic advice.
+Be specific and actionable. Don't give generic advice. For copyRewrites, use the EXACT original text found on the page.
 `
 }
 
@@ -128,6 +156,7 @@ function parseAIResponse(text: string): AnalysisResult {
       findings: parsed.findings || [],
       improvedHeadline: parsed.improvedHeadline,
       improvedCTA: parsed.improvedCTA,
+      copyRewrites: parsed.copyRewrites || [],
     }
   } catch (error) {
     console.error('Failed to parse AI response:', error)

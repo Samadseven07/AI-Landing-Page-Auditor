@@ -2,7 +2,7 @@
 import { pdf } from '@react-pdf/renderer'
 import { AuditReportPDF } from '@/components/AuditReportPDF'
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import type { AnalysisResult, Finding } from '@/lib/aiAnalyzer'
@@ -16,12 +16,15 @@ interface DatabaseFinding {
 
 export default function ReportPage() {
   const params = useParams()
+  const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [report, setReport] = useState<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [findings, setFindings] = useState<DatabaseFinding[]>([])
   const [loading, setLoading] = useState(true)
+  const [history, setHistory] = useState<any[]>([])
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const loadReport = async () => {
@@ -46,6 +49,33 @@ export default function ReportPage() {
 
     loadReport()
   }, [params.id])
+
+  // Feature 13: Score history
+  useEffect(() => {
+    if (report?.url) {
+      fetch(`/api/reports/history?url=${encodeURIComponent(report.url)}`)
+        .then(r => r.json())
+        .then(d => setHistory(d.history || []))
+        .catch(() => {})
+    }
+    if (report?.share_token) {
+      setShareUrl(`${window.location.origin}/share/${report.share_token}`)
+    }
+  }, [report?.url, report?.share_token])
+
+  // Feature 9: Share handler
+  const handleShare = async () => {
+    try {
+      const res = await fetch(`/api/reports/${report.id}/share`, { method: 'POST' })
+      const data = await res.json()
+      const url = `${window.location.origin}/share/${data.shareToken}`
+      setShareUrl(url)
+      await navigator.clipboard.writeText(url)
+      alert('Share link copied to clipboard!')
+    } catch {
+      alert('Failed to create share link')
+    }
+  }
 
   const handleDownloadPDF = async () => {
     if (!report || !findings) return
@@ -105,11 +135,23 @@ export default function ReportPage() {
               <h1 className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400 hidden min-[360px]:block">Auditor AI</h1>
             </Link>
             
-            <div className="flex items-center gap-3 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link href="/dashboard" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5 py-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                 <span className="hidden sm:inline">Dashboard</span>
               </Link>
+              <button
+                onClick={() => router.push(`/audit?url=${encodeURIComponent(report?.url || '')}`)}
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-zinc-800 border border-zinc-700 text-white rounded-full text-xs font-bold hover:bg-zinc-700 transition-all shrink-0"
+              >
+                🔄 <span className="hidden sm:inline">Re-Audit</span>
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-zinc-800 border border-zinc-700 text-white rounded-full text-xs font-bold hover:bg-zinc-700 transition-all shrink-0"
+              >
+                🔗 <span className="hidden sm:inline">{shareUrl ? 'Copy Link' : 'Share'}</span>
+              </button>
               <button
                 onClick={handleDownloadPDF}
                 className="group relative flex items-center gap-1.5 px-4 py-2.5 sm:px-6 sm:py-3 bg-white text-zinc-950 rounded-full text-xs sm:text-sm font-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/10 shrink-0"
@@ -221,6 +263,84 @@ export default function ReportPage() {
                 )}
               </div>
             </section>
+
+            {/* Mobile Screenshot */}
+            {report?.mobile_screenshot_url && (
+              <section className="space-y-6">
+                <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 text-sm">📱</span>
+                  Mobile Preview
+                </h3>
+                <div className="max-w-sm mx-auto">
+                  <div className="relative rounded-[2rem] overflow-hidden border-4 border-zinc-700 shadow-2xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={report.mobile_screenshot_url} alt="Mobile landing page preview" className="w-full" />
+                  </div>
+                  <p className="text-center text-xs text-zinc-500 mt-3">375px mobile viewport</p>
+                </div>
+              </section>
+            )}
+
+            {/* Before / After Copy Rewrites */}
+            {report?.copy_rewrites?.length > 0 && (
+              <section className="space-y-6">
+                <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 text-sm">03</span>
+                  Copy Rewrites
+                </h3>
+                <div className="space-y-4">
+                  {report.copy_rewrites.map((rewrite: any, i: number) => (
+                    <div key={i} className="rounded-2xl border border-zinc-800 overflow-hidden">
+                      <div className="px-5 py-3 bg-zinc-900 border-b border-zinc-800 text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                        {rewrite.section}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800">
+                        <div className="p-5">
+                          <div className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Before</div>
+                          <p className="text-sm text-zinc-400">{rewrite.original}</p>
+                        </div>
+                        <div className="p-5 bg-emerald-500/5">
+                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">After</div>
+                          <p className="text-sm text-white font-medium">{rewrite.improved}</p>
+                        </div>
+                      </div>
+                      <div className="px-5 py-3 bg-zinc-950 border-t border-zinc-800 text-xs text-zinc-500">
+                        💡 {rewrite.reason}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Score History */}
+            {history.length >= 2 && (
+              <section className="space-y-4">
+                <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 text-sm">📈</span>
+                  Score History
+                </h3>
+                <div className="bg-zinc-900 rounded-2xl p-6 border border-zinc-800">
+                  <div className="flex items-end gap-3 h-20">
+                    {history.map((h: any, i: number) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-[9px] text-zinc-400 font-bold">{h.overall_score}</span>
+                        <div
+                          className="w-full rounded-t bg-purple-500 transition-all duration-700"
+                          style={{ height: `${h.overall_score}%` }}
+                        />
+                        <span className="text-[9px] text-zinc-500">
+                          {new Date(h.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-3 text-center">
+                    Score trend over {history.length} audits
+                  </p>
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -292,31 +412,38 @@ export default function ReportPage() {
   )
 }
 
-function ScoreCard({ label, score, color, icon }: { label: string; score: number; color: string; icon: React.ReactNode }) {
-  const colors: any = {
-    emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 group-hover:border-emerald-500/40',
-    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20 group-hover:border-blue-500/40',
-    purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20 group-hover:border-purple-500/40',
-    amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20 group-hover:border-amber-500/40',
+function ScoreCard({ label, score = 0, color, icon }: { label: string; score?: number; color: string; icon: React.ReactNode }) {
+  const strokeColors: Record<string, string> = {
+    emerald: '#4ade80', blue: '#60a5fa', purple: '#a78bfa', amber: '#fbbf24', red: '#f87171',
   }
+  const bgColors: Record<string, string> = {
+    emerald: 'rgba(74,222,128,0.08)', blue: 'rgba(96,165,250,0.08)', purple: 'rgba(167,139,250,0.08)', amber: 'rgba(251,191,36,0.08)', red: 'rgba(248,113,113,0.08)',
+  }
+  const stroke = strokeColors[color] || '#a78bfa'
+  const bg = bgColors[color] || 'rgba(167,139,250,0.08)'
+  const radius = 45
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (score / 100) * circumference
+  const scoreColor = score >= 80 ? '#4ade80' : score >= 60 ? '#a3e635' : score >= 40 ? '#facc15' : score >= 20 ? '#fb923c' : '#f87171'
 
   return (
-    <div className="glass-card p-8 rounded-[2.5rem] space-y-6 transition-all duration-500 hover:scale-[1.03] hover:bg-zinc-900/80 group relative overflow-hidden">
-      <div className="flex items-center justify-between relative z-10">
-        <div className={`p-3 rounded-2xl transition-colors duration-500 ${colors[color]}`}>
-          {icon}
-        </div>
-        <div className="text-3xl font-black text-white transition-all duration-500 group-hover:text-glow-purple">{score}</div>
+    <div className="rounded-[2rem] p-6 space-y-4 transition-all duration-500 hover:scale-[1.03] group relative overflow-hidden border border-zinc-800" style={{ background: bg }}>
+      <div className="flex items-center justify-between">
+        <div className="p-2.5 rounded-xl" style={{ background: bg, color: stroke }}>{icon}</div>
+        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md" style={{ color: scoreColor, background: `${scoreColor}18` }}>
+          {score >= 80 ? 'Great' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Poor'}
+        </span>
       </div>
-      <div className="relative z-10">
-        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3 group-hover:text-zinc-400 transition-colors">{label}</div>
-        <div className="h-1.5 w-full bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50 shadow-inner">
-          <div 
-            className={`h-full transition-all duration-1000 ease-out bg-current ${colors[color].split(' ')[0]}`} 
-            style={{ width: `${score}%` }}
-          ></div>
+      <div className="flex items-center justify-center py-2">
+        <div className="relative">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
+            <circle cx="60" cy="60" r={radius} fill="none" stroke={stroke} strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} transform="rotate(-90 60 60)" style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
+            <text x="60" y="60" textAnchor="middle" dominantBaseline="central" fill="white" fontSize="22" fontWeight="900" fontFamily="sans-serif">{score}</text>
+          </svg>
         </div>
       </div>
+      <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest text-center">{label}</div>
     </div>
   )
 }
